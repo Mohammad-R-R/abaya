@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      Role      @default(STAFF)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expenses  Expense[]
+  sales     Sale[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  nameAr    String?
+  createdAt DateTime @default(now())
+  abayas    Abaya[]
+
+  @@map("categories")
+}
+
+model Abaya {
+  id            String       @id @default(uuid())
+  name          String
+  nameAr        String?
+  description   String?
+  categoryId    String
+  quantity      Int          @default(0)
+  costPrice     Decimal      @db.Decimal(10, 2)
+  sellingPrice  Decimal      @db.Decimal(10, 2)
+  sku           String?      @unique
+  lowStockAlert Int          @default(5)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  images        AbayaImage[]
+  category      Category     @relation(fields: [categoryId], references: [id])
+  saleItems     SaleItem[]
+  stockLogs     StockLog[]
+
+  @@map("abayas")
+}
+
+model AbayaImage {
+  id        String   @id @default(uuid())
+  abayaId   String
+  url       String
+  publicId  String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  abaya     Abaya    @relation(fields: [abayaId], references: [id], onDelete: Cascade)
+
+  @@map("abaya_images")
+}
+
+model StockLog {
+  id        String   @id @default(uuid())
+  abayaId   String
+  change    Int
+  reason    String
+  before    Int
+  after     Int
+  createdAt DateTime @default(now())
+  abaya     Abaya    @relation(fields: [abayaId], references: [id])
+
+  @@map("stock_logs")
+}
+
+model Sale {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  userId        String
+  subtotal      Decimal       @db.Decimal(10, 2)
+  discount      Decimal       @default(0) @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod @default(CASH)
+  notes         String?
+  customerName  String?
+  customerPhone String?
+  createdAt     DateTime      @default(now())
+  items         SaleItem[]
+  user          User          @relation(fields: [userId], references: [id])
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id         String  @id @default(uuid())
+  saleId     String
+  abayaId    String
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(10, 2)
+  totalPrice Decimal @db.Decimal(10, 2)
+  abaya      Abaya   @relation(fields: [abayaId], references: [id])
+  sale       Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("sale_items")
+}
+
+model Expense {
+  id          String          @id @default(uuid())
+  userId      String
+  category    ExpenseCategory
+  description String
+  amount      Decimal         @db.Decimal(10, 2)
+  date        DateTime        @default(now())
+  receipt     String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User            @relation(fields: [userId], references: [id])
+
+  @@map("expenses")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CARD
+  OTHER
+}
+
+enum ExpenseCategory {
+  RENT
+  SHIPPING
+  SUPPLIES
+  UTILITIES
+  MARKETING
+  SALARIES
+  MAINTENANCE
+  OTHER
+}
