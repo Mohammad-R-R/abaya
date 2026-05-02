@@ -15,6 +15,7 @@ const categoryRoutes = require('./routes/category.routes');
 const importRoutes = require('./routes/import.routes');
 
 const { errorHandler } = require('./middleware/error.middleware');
+const startupSeed = require('./utils/startupSeed');
 
 const app = express();
 
@@ -77,6 +78,9 @@ app.use(errorHandler);
 
 // ─── Start Server ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
+// Run seed on first startup
+startupSeed();
+
 app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════╗
